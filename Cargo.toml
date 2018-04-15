@@ -1,0 +1,18 @@
+[package]
+name = "ecdh_wrapper"
+version = "0.0.0"
+authors = ["David Stainton <dstainton415@gmail.com>"]
+description = "ECDH wrapper library, currently wrapping sodiumoxide."
+homepage = "https://github.com/applied-mixnetworks/ecdh_wrapper"
+repository = "https://github.com/applied-mixnetworks/ecdh_wrapper"
+documentation = "https://docs.rs/ecdh_wrapper/"
+readme = "README.md"
+keywords = ["cryptography", "ecdh"]
+license = "MIT"
+
+[dependencies]
+sodiumoxide = "0.0.16"
+rand = "^0.4.2"
+
+[dev-dependencies]
+rand = "^0.4.2"
