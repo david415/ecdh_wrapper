@@ -1,4 +1,4 @@
-// ecdh.rs - wrapping library for curve25519 dh operations
+// lib.rs - wrapping library for curve25519 dh operations
 // Copyright (C) 2018  David Anthony Stainton.
 //
 // MIT License
@@ -25,7 +25,6 @@ extern crate rand;
 extern crate sodiumoxide;
 
 use self::rand::{Rng};
-use self::rand::os::OsRng;
 use sodiumoxide::crypto::scalarmult::curve25519::{Scalar, GroupElement, scalarmult, scalarmult_base};
 
 const CURVE25519_SIZE: usize = 32;
@@ -82,22 +81,15 @@ pub struct PrivateKey {
 }
 
 impl PrivateKey {
-
-    pub fn generate() -> Result<PrivateKey, &'static str> {
-        let rnd = OsRng::new();
-        let mut rnd = match rnd {
-            Ok(r) => r,
-            Err(_) => return Err("failed to retrieve random data"),
-        };
-        let raw_key = rnd.gen_iter::<u8>().take(KEY_SIZE).collect::<Vec<u8>>();
-        let mut raw_arr = [0u8; KEY_SIZE];
-        raw_arr.copy_from_slice(&raw_key);
+    pub fn generate<R: Rng>(rng: &mut R) -> Result<PrivateKey, &'static str> {
+        let mut raw_key = [0u8; KEY_SIZE];
+        rng.fill_bytes(&mut raw_key);
         let pub_key = PublicKey{
-            _key: exp_g(&raw_arr),
+            _key: exp_g(&raw_key),
         };
         let key = PrivateKey{
             public_key: pub_key,
-            _priv_bytes: raw_arr,
+            _priv_bytes: raw_key,
         };
         Ok(key)
     }
@@ -138,7 +130,8 @@ mod tests {
 
     #[test]
     fn dh_ops_test() {
-        let alice_private_key = PrivateKey::generate().unwrap();        
+        let mut r = OsRng::new().expect("failure to create an OS RNG");
+        let alice_private_key = PrivateKey::generate(&mut r).unwrap();
         let mut bob_sk = [0u8; KEY_SIZE];
         let mut rnd = OsRng::new().unwrap();
         let raw = rnd.gen_iter::<u8>().take(KEY_SIZE).collect::<Vec<u8>>();
