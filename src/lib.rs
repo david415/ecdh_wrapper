@@ -32,6 +32,7 @@ const CURVE25519_SIZE: usize = 32;
 // KEY_SIZE is the size in bytes of the keys.
 pub const KEY_SIZE: usize = CURVE25519_SIZE;
 
+/// exp performs elliptic curve scalar multiplication
 pub fn exp(x: &[u8; KEY_SIZE], y: &[u8; KEY_SIZE]) -> [u8; 32] {
     let group_element = GroupElement(*x);
     let g = scalarmult(&Scalar(*y), &group_element).unwrap();
@@ -40,6 +41,7 @@ pub fn exp(x: &[u8; KEY_SIZE], y: &[u8; KEY_SIZE]) -> [u8; 32] {
     out
 }
 
+/// exp_g performs elliptic curve base scalar multiplication
 pub fn exp_g(x: &[u8; KEY_SIZE]) -> [u8; 32] {
     let g = scalarmult_base(&Scalar(*x));
     let mut out = [0u8; KEY_SIZE];
@@ -47,24 +49,29 @@ pub fn exp_g(x: &[u8; KEY_SIZE]) -> [u8; 32] {
     out
 }
 
+/// PublicKey, a public key for performing ECDH and blinding operations.
 #[derive(Clone, Copy, Default, PartialEq, Debug)]
 pub struct PublicKey {
     _key: [u8; KEY_SIZE],
 }
 
 impl PublicKey {
+    /// perform a blinding operation on the key
     pub fn blind(&mut self, blinding_factor: &[u8; KEY_SIZE]) {
         self._key = exp(&self._key, blinding_factor)
     }
 
+    /// to_vec returns the key as a Vec<u8>
     pub fn to_vec(&self) -> Vec<u8> {
         self._key.to_vec()
     }
 
+    /// as_array returns the key as an array [u8; KEY_SIZE]
     pub fn as_array(&self) -> [u8; KEY_SIZE] {
         self._key
     }
 
+    /// from_bytes resets the key to the given bytes
     pub fn from_bytes(&mut self, b: &[u8]) -> Result<(), &'static str> {
         if b.len() != KEY_SIZE {
             return Err("errInvalidKey")
@@ -74,6 +81,7 @@ impl PublicKey {
     }
 }
 
+/// Privatekey, a keypair for performing ECDH and blinding operations.
 #[derive(Clone, Copy, Default)]
 pub struct PrivateKey {
     public_key: PublicKey,
@@ -81,6 +89,33 @@ pub struct PrivateKey {
 }
 
 impl PrivateKey {
+    /// from_bytes creates a new keypair from the given bytes
+    pub fn from_bytes(b: &[u8]) -> Result<PrivateKey, &'static str> {
+        if b.len() != KEY_SIZE {
+            return Err("errInvalidKey")
+        }
+        let mut raw_key = [0u8; KEY_SIZE];
+        raw_key.copy_from_slice(&b);
+        let pub_key = PublicKey{
+            _key: exp_g(&raw_key),
+        };
+        let keypair = PrivateKey{
+            public_key: pub_key,
+            _priv_bytes: raw_key,
+        };
+        Ok(keypair)
+    }
+
+    /// generate creates a new key pair
+    ///
+    /// # Arguments
+    ///
+    /// * `rng` - an implementation of Rng, a random number generator.
+    ///
+    /// # Returns
+    ///
+    /// * Returns a PrivateKey or an error.
+    ///
     pub fn generate<R: Rng>(rng: &mut R) -> Result<PrivateKey, &'static str> {
         let mut raw_key = [0u8; KEY_SIZE];
         rng.fill_bytes(&mut raw_key);
@@ -94,30 +129,24 @@ impl PrivateKey {
         Ok(key)
     }
 
+    /// public_key returns the PublicKey
     pub fn public_key(&self) -> PublicKey {
         self.public_key
     }
-    
+
     /// Exp calculates the shared secret with the provided public key.
     pub fn exp(&self, public_key: &PublicKey) -> [u8; KEY_SIZE] {
         exp(&public_key._key, &self._priv_bytes)
     }
-    
+
+    /// to_vec returns the private key as a Vec<u8>
     pub fn to_vec(&self) -> Vec<u8> {
         self._priv_bytes.to_vec()
     }
 
+    /// as_array returns the private key as an array [u8; KEY_SIZE]
     pub fn as_array(&self) -> [u8; KEY_SIZE] {
         self._priv_bytes
-    }
-
-    pub fn from_bytes(&mut self, b: &[u8]) -> Result<(), &'static str> {
-        if b.len() != KEY_SIZE {
-            return Err("errInvalidKey")
-        }
-        self._priv_bytes.copy_from_slice(&b);
-        self.public_key._key = exp_g(&self._priv_bytes);
-        Ok(())
     }
 }
 
