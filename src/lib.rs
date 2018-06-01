@@ -47,7 +47,7 @@ pub fn exp_g(x: &[u8; KEY_SIZE]) -> [u8; 32] {
     out
 }
 
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy, Default, PartialEq, Debug)]
 pub struct PublicKey {
     _key: [u8; KEY_SIZE],
 }
