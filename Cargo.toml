@@ -8,7 +8,7 @@ repository = "https://github.com/applied-mixnetworks/ecdh_wrapper"
 documentation = "https://docs.rs/ecdh_wrapper/"
 readme = "README.md"
 keywords = ["cryptography", "ecdh"]
-license = "MIT"
+license = "AGPL-3.0-only"
 
 [dependencies]
 sodiumoxide = "0.0.16"

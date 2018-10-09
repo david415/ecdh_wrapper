@@ -10,4 +10,4 @@ This code has not been formally audited and should only be use with extreme care
 
 ### License
 
-ecdh_wrapper is available via the MIT License.
+ecdh_wrapper is available via the GNU AFFERO GENERAL PUBLIC LICENSE.
