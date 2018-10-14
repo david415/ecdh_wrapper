@@ -24,13 +24,18 @@
 extern crate rand;
 extern crate sodiumoxide;
 
+pub mod errors;
+
 use self::rand::{Rng};
 use sodiumoxide::crypto::scalarmult::curve25519::{Scalar, GroupElement, scalarmult, scalarmult_base};
+
+use errors::KeyError;
 
 const CURVE25519_SIZE: usize = 32;
 
 // KEY_SIZE is the size in bytes of the keys.
 pub const KEY_SIZE: usize = CURVE25519_SIZE;
+
 
 /// exp performs elliptic curve scalar multiplication
 pub fn exp(x: &[u8; KEY_SIZE], y: &[u8; KEY_SIZE]) -> [u8; 32] {
@@ -72,12 +77,18 @@ impl PublicKey {
     }
 
     /// from_bytes resets the key to the given bytes
-    pub fn from_bytes(&mut self, b: &[u8]) -> Result<(), &'static str> {
+    pub fn from_bytes(&mut self, b: &[u8]) -> Result<(), KeyError> {
         if b.len() != KEY_SIZE {
-            return Err("errInvalidKey")
+            return Err(KeyError::InvalidSize);
         }
         self._key.copy_from_slice(b);
         Ok(())
+    }
+
+    /// reset resets the key to explicit zeros
+    pub fn reset(&mut self) {
+        let zeros = [0u8; KEY_SIZE];
+        self._key.copy_from_slice(&zeros);
     }
 }
 
@@ -90,9 +101,9 @@ pub struct PrivateKey {
 
 impl PrivateKey {
     /// from_bytes creates a new keypair from the given bytes
-    pub fn from_bytes(b: &[u8]) -> Result<PrivateKey, &'static str> {
+    pub fn from_bytes(b: &[u8]) -> Result<PrivateKey, KeyError> {
         if b.len() != KEY_SIZE {
-            return Err("errInvalidKey")
+            return Err(KeyError::InvalidSize)
         }
         let mut raw_key = [0u8; KEY_SIZE];
         raw_key.copy_from_slice(&b);
@@ -116,7 +127,7 @@ impl PrivateKey {
     ///
     /// * Returns a PrivateKey or an error.
     ///
-    pub fn generate<R: Rng>(rng: &mut R) -> Result<PrivateKey, &'static str> {
+    pub fn generate<R: Rng>(rng: &mut R) -> PrivateKey {
         let mut raw_key = [0u8; KEY_SIZE];
         rng.fill_bytes(&mut raw_key);
         let pub_key = PublicKey{
@@ -126,7 +137,7 @@ impl PrivateKey {
             public_key: pub_key,
             _priv_bytes: raw_key,
         };
-        Ok(key)
+        key
     }
 
     /// public_key returns the PublicKey
@@ -148,6 +159,13 @@ impl PrivateKey {
     pub fn as_array(&self) -> [u8; KEY_SIZE] {
         self._priv_bytes
     }
+
+    /// reset resets the key to explicit zeros
+    pub fn reset(&mut self) {
+        let zeros = [0u8; KEY_SIZE];
+        self._priv_bytes.copy_from_slice(&zeros);
+        self.public_key.reset();
+    }
 }
 
 #[cfg(test)]
@@ -159,11 +177,10 @@ mod tests {
 
     #[test]
     fn dh_ops_test() {
-        let mut r = OsRng::new().expect("failure to create an OS RNG");
-        let alice_private_key = PrivateKey::generate(&mut r).unwrap();
+        let mut rng = OsRng::new().expect("failure to create an OS RNG");
+        let alice_private_key = PrivateKey::generate(&mut rng);
         let mut bob_sk = [0u8; KEY_SIZE];
-        let mut rnd = OsRng::new().unwrap();
-        let raw = rnd.gen_iter::<u8>().take(KEY_SIZE).collect::<Vec<u8>>();
+        let raw = rng.gen_iter::<u8>().take(KEY_SIZE).collect::<Vec<u8>>();
         bob_sk.copy_from_slice(raw.as_slice());
         let bob_pk = exp_g(&bob_sk);
         let tmp1 = exp_g(&alice_private_key.as_array());
