@@ -22,12 +22,11 @@
 // SOFTWARE.
     
 extern crate rand;
-extern crate sodiumoxide;
+extern crate x25519_dalek;
 
 pub mod errors;
-
 use self::rand::{Rng};
-use sodiumoxide::crypto::scalarmult::curve25519::{Scalar, GroupElement, scalarmult, scalarmult_base};
+use x25519_dalek::{generate_public, diffie_hellman};
 
 use errors::KeyError;
 
@@ -39,19 +38,12 @@ pub const KEY_SIZE: usize = CURVE25519_SIZE;
 
 /// exp performs elliptic curve scalar multiplication
 pub fn exp(x: &[u8; KEY_SIZE], y: &[u8; KEY_SIZE]) -> [u8; 32] {
-    let group_element = GroupElement(*x);
-    let g = scalarmult(&Scalar(*y), &group_element).unwrap();
-    let mut out = [0u8; KEY_SIZE];
-    out.copy_from_slice(&g[..]);
-    out
+    diffie_hellman(y, x)
 }
 
 /// exp_g performs elliptic curve base scalar multiplication
 pub fn exp_g(x: &[u8; KEY_SIZE]) -> [u8; 32] {
-    let g = scalarmult_base(&Scalar(*x));
-    let mut out = [0u8; KEY_SIZE];
-    out.copy_from_slice(&g[..]);
-    out
+    generate_public(x).to_bytes()
 }
 
 /// PublicKey, a public key for performing ECDH and blinding operations.

@@ -11,7 +11,7 @@ keywords = ["cryptography", "ecdh"]
 license = "AGPL-3.0-only"
 
 [dependencies]
-sodiumoxide = "0.0.16"
+x25519-dalek = "=0.2.1"
 rand = "^0.4.2"
 
 [dev-dependencies]
