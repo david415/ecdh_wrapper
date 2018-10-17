@@ -110,15 +110,8 @@ impl PrivateKey {
     /// * Returns a PrivateKey or an error.
     ///
     pub fn generate<R: Rng>(rng: &mut R) -> PrivateKey {
-        let mut raw_key = [0u8; KEY_SIZE];
-        rng.fill_bytes(&mut raw_key);
-        let pub_key = PublicKey{
-            _key: exp_g(&raw_key),
-        };
-        let key = PrivateKey{
-            public_key: pub_key,
-            _priv_bytes: raw_key,
-        };
+        let mut key = PrivateKey::default();
+        key.regenerate(rng);
         key
     }
 
@@ -134,6 +127,12 @@ impl PrivateKey {
         self.public_key = pub_key;
         self._priv_bytes = raw_key;
         Ok(())
+    }
+
+    pub fn regenerate<R: Rng>(&mut self, rng: &mut R) {
+        let mut raw_key = [0u8; KEY_SIZE];
+        rng.fill_bytes(&mut raw_key);
+        self.load_bytes(&raw_key);
     }
 
     /// public_key returns the PublicKey
