@@ -85,7 +85,7 @@ impl PublicKey {
 }
 
 /// Privatekey, a keypair for performing ECDH and blinding operations.
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy, Default, Debug, PartialEq)]
 pub struct PrivateKey {
     public_key: PublicKey,
     _priv_bytes: [u8; KEY_SIZE],
@@ -94,18 +94,8 @@ pub struct PrivateKey {
 impl PrivateKey {
     /// from_bytes creates a new keypair from the given bytes
     pub fn from_bytes(b: &[u8]) -> Result<PrivateKey, KeyError> {
-        if b.len() != KEY_SIZE {
-            return Err(KeyError::InvalidSize)
-        }
-        let mut raw_key = [0u8; KEY_SIZE];
-        raw_key.copy_from_slice(&b);
-        let pub_key = PublicKey{
-            _key: exp_g(&raw_key),
-        };
-        let keypair = PrivateKey{
-            public_key: pub_key,
-            _priv_bytes: raw_key,
-        };
+        let mut keypair = PrivateKey::default();
+        keypair.load_bytes(b)?;
         Ok(keypair)
     }
 
@@ -130,6 +120,20 @@ impl PrivateKey {
             _priv_bytes: raw_key,
         };
         key
+    }
+
+    pub fn load_bytes(&mut self, b: &[u8]) -> Result<(), KeyError> {
+        if b.len() != KEY_SIZE {
+            return Err(KeyError::InvalidSize)
+        }
+        let mut raw_key = [0u8; KEY_SIZE];
+        raw_key.copy_from_slice(&b);
+        let pub_key = PublicKey{
+            _key: exp_g(&raw_key),
+        };
+        self.public_key = pub_key;
+        self._priv_bytes = raw_key;
+        Ok(())
     }
 
     /// public_key returns the PublicKey
