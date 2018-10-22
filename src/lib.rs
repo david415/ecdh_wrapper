@@ -47,7 +47,7 @@ pub fn exp_g(x: &[u8; KEY_SIZE]) -> [u8; 32] {
 }
 
 /// PublicKey, a public key for performing ECDH and blinding operations.
-#[derive(Clone, Copy, Default, PartialEq, Debug)]
+#[derive(Clone, Copy, Default, PartialEq, Eq, Hash, Debug)]
 pub struct PublicKey {
     _key: [u8; KEY_SIZE],
 }
