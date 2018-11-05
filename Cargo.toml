@@ -13,6 +13,8 @@ license = "AGPL-3.0-only"
 [dependencies]
 x25519-dalek = "=0.2.1"
 rand = "^0.4.2"
+pem = "0.4"
 
 [dev-dependencies]
 rand = "^0.4.2"
+tempfile = "3.0.4"

@@ -17,16 +17,25 @@
 use std::error::{Error};
 use std::fmt;
 
+
 #[derive(Debug)]
 pub enum KeyError {
+    InvalidKeyType,
     InvalidSize,
+    InvalidPublicKey,
+    PemError(pem::Error),
+    IoError(std::io::Error),
 }
 
 impl fmt::Display for KeyError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         use self::KeyError::*;
         match self {
+            InvalidKeyType => write!(f, "Invalid key type."),
             InvalidSize => write!(f, "Invalid authentication message size."),
+            InvalidPublicKey => write!(f, "The given public key was invalid."),
+            IoError(x) => x.fmt(f),
+            PemError(x) => x.fmt(f),
         }
     }
 }
@@ -40,7 +49,23 @@ impl Error for KeyError {
     fn cause(&self) -> Option<&Error> {
         use self::KeyError::*;
         match self {
+            InvalidKeyType => None,
             InvalidSize => None,
+            InvalidPublicKey => None,
+            IoError(x) => x.cause(),
+            PemError(x) => x.cause(),
         }
+    }
+}
+
+impl From<std::io::Error> for KeyError {
+    fn from(error: std::io::Error) -> Self {
+        KeyError::IoError(error)
+    }
+}
+
+impl From<pem::Error> for KeyError {
+    fn from(error: pem::Error) -> Self {
+        KeyError::PemError(error)
     }
 }
