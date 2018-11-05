@@ -17,6 +17,7 @@
 extern crate rand;
 extern crate x25519_dalek;
 extern crate pem;
+extern crate base64;
 
 pub mod errors;
 
@@ -102,8 +103,21 @@ impl PublicKey {
         if b.len() != KEY_SIZE {
             return Err(KeyError::InvalidSize);
         }
-        self.public_bytes.copy_from_slice(b);
+        self.public_bytes.clone_from_slice(b);
         Ok(())
+    }
+
+    /// to_base64 encodes the key as base64 string.
+    pub fn to_base64(&self) -> String {
+            base64::encode(&self.public_bytes)
+    }
+
+    /// from_base64 returns a PublicKey given a base64 string.
+    pub fn from_base64(base64_string: String) -> Result<PublicKey, KeyError> {
+        let mut key = PublicKey::default();
+        let bytes = base64::decode(&base64_string).unwrap();
+        key.public_bytes.clone_from_slice(&bytes);
+        Ok(key)
     }
 
     /// reset resets the key to explicit zeros
@@ -271,5 +285,16 @@ mod tests {
 
         let private_key2 = PrivateKey::from_pem_files(priv_key, pub_key).unwrap();
         assert_eq!(private_key, private_key2);
+    }
+
+    #[test]
+    fn encode_decode_base64_test() {
+        let mut rng = OsRng::new().unwrap();
+        let private_key = PrivateKey::generate(&mut rng).unwrap();
+        let public_key = private_key.public_key();
+        let str1 = public_key.to_base64();
+        println!("pub key as base64:\n{}", str1);
+        let public_key2 = PublicKey::from_base64(str1).unwrap();
+        assert_eq!(public_key, public_key2);
     }
 }
