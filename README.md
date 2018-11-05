@@ -14,7 +14,7 @@ This code has not been formally audited and should only be use with extreme care
 To import `ecdh_wrapper`, add the following to the dependencies section of
 your project's `Cargo.toml`:
 ```toml
-ecdh_wrapper = "^0.0.5"
+ecdh_wrapper = "^0.0.6"
 ```
 Then import the crate as:
 ```rust,no_run
