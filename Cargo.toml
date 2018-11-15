@@ -1,6 +1,6 @@
 [package]
 name = "ecdh_wrapper"
-version = "0.0.6"
+version = "0.0.7"
 authors = ["David Stainton <dstainton415@gmail.com>"]
 description = "ECDH wrapper library, currently wrapping sodiumoxide."
 homepage = "https://github.com/applied-mixnetworks/ecdh_wrapper"
