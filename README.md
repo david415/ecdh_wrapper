@@ -6,7 +6,7 @@ This crate provides a wrapper around x25519.
 
 ### Warning
 
-This code has not been formally audited and should only be use with extreme care and advice from competent cryptographers.
+This code has not been formally audited. Use it at your own risk!
 
 
 # Usage
@@ -14,7 +14,7 @@ This code has not been formally audited and should only be use with extreme care
 To import `ecdh_wrapper`, add the following to the dependencies section of
 your project's `Cargo.toml`:
 ```toml
-ecdh_wrapper = "^0.0.6"
+ecdh_wrapper = "^0.0.7"
 ```
 Then import the crate as:
 ```rust,no_run
