@@ -12,6 +12,7 @@ license = "AGPL-3.0-only"
 
 [dependencies]
 x25519-dalek = "=0.2.1"
+clear_on_drop = "0.2.3"
 rand = "^0.4.2"
 pem = "0.4"
 base64 = "0.10.0"

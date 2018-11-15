@@ -16,6 +16,7 @@
     
 extern crate rand;
 extern crate x25519_dalek;
+extern crate clear_on_drop;
 extern crate pem;
 extern crate base64;
 
@@ -26,6 +27,7 @@ use std::io::prelude::*;
 use std::fs::{File, write};
 use rand::{Rng};
 use x25519_dalek::{generate_public, diffie_hellman};
+use clear_on_drop::{ClearOnDrop};
 use pem::{Pem, parse, encode};
 
 use errors::KeyError;
@@ -128,10 +130,19 @@ impl PublicKey {
 }
 
 /// Privatekey, a keypair for performing ECDH and blinding operations.
-#[derive(Clone, Copy, Default, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct PrivateKey {
     public_key: PublicKey,
-    private_bytes: [u8; KEY_SIZE],
+    private_bytes: ClearOnDrop<Box<[u8; KEY_SIZE]>>,
+}
+
+impl Default for PrivateKey {
+    fn default() -> Self {
+        PrivateKey {
+            public_key: PublicKey::default(),
+            private_bytes: ClearOnDrop::new(Box::new([0u8; KEY_SIZE])),
+        }
+    }
 }
 
 impl PrivateKey {
@@ -183,13 +194,13 @@ impl PrivateKey {
         if b.len() != KEY_SIZE {
             return Err(KeyError::InvalidSize)
         }
-        let mut raw_key = [0u8; KEY_SIZE];
+        let mut raw_key = Box::new([0u8; KEY_SIZE]);
         raw_key.copy_from_slice(&b);
         let pub_key = PublicKey{
             public_bytes: exp_g(&raw_key),
         };
         self.public_key = pub_key;
-        self.private_bytes = raw_key;
+        self.private_bytes = ClearOnDrop::new(raw_key);
         Ok(())
     }
 
@@ -229,8 +240,8 @@ impl PrivateKey {
     }
 
     /// as_array returns the private key as an array [u8; KEY_SIZE]
-    pub fn as_array(&self) -> [u8; KEY_SIZE] {
-        self.private_bytes
+    pub fn as_array(self) -> [u8; KEY_SIZE] {
+        *ClearOnDrop::into_uncleared_place(self.private_bytes)
     }
 
     /// reset resets the key to explicit zeros
@@ -259,9 +270,9 @@ mod tests {
         let raw = rng.gen_iter::<u8>().take(KEY_SIZE).collect::<Vec<u8>>();
         bob_sk.copy_from_slice(raw.as_slice());
         let bob_pk = exp_g(&bob_sk);
-        let tmp1 = exp_g(&alice_private_key.as_array());
+        let tmp1 = exp_g(&alice_private_key.clone().as_array());
         assert_eq!(tmp1, alice_private_key.public_key.public_bytes);
-        let alice_s = exp(&bob_pk, &alice_private_key.as_array());
+        let alice_s = exp(&bob_pk, &alice_private_key.clone().as_array());
         let bob_s = exp(&alice_private_key.public_key.public_bytes, &bob_sk);
         assert_eq!(alice_s, bob_s);
     }
