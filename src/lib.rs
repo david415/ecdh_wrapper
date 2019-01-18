@@ -26,7 +26,7 @@ pub mod errors;
 use std::io::prelude::*;
 use std::fs::{File, write};
 use rand::{Rng};
-use x25519_dalek::{generate_public, diffie_hellman};
+use x25519_dalek::{X25519_BASEPOINT_BYTES, x25519};
 use clear_on_drop::{ClearOnDrop};
 use pem::{Pem, parse, encode};
 
@@ -42,12 +42,12 @@ pub const KEY_SIZE: usize = CURVE25519_SIZE;
 
 /// exp performs elliptic curve scalar multiplication
 pub fn exp(x: &[u8; KEY_SIZE], y: &[u8; KEY_SIZE]) -> [u8; 32] {
-    diffie_hellman(y, x)
+    x25519(*y, *x)
 }
 
 /// exp_g performs elliptic curve base scalar multiplication
 pub fn exp_g(x: &[u8; KEY_SIZE]) -> [u8; 32] {
-    generate_public(x).to_bytes()
+    x25519(*x, X25519_BASEPOINT_BYTES)
 }
 
 /// PublicKey, a public key for performing ECDH and blinding operations.
