@@ -52,8 +52,8 @@ impl Error for KeyError {
             InvalidKeyType => None,
             InvalidSize => None,
             InvalidPublicKey => None,
-            IoError(x) => x.cause(),
-            PemError(x) => x.cause(),
+            IoError(x) => x.source(),
+            PemError(x) => x.source(),
         }
     }
 }
